@@ -1,74 +1,343 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>HDMI Stream</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HDMI Pro Scanner</title>
+
+  <!-- Google Fonts: Orbitron (futuristic) + Roboto -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
   <style>
-    body { font-family: sans-serif; text-align: center; background: #000; color: #0f0; }
-    video { width: 90%; max-width: 800px; margin: 20px auto; border: 3px solid #0f0; }
-    button { padding: 15px 30px; font-size: 18px; background: #0f0; color: #000; border: none; }
+    :root {
+      --bg: #0a0a0a;
+      --card: #111;
+      --accent: #00ff88;
+      --text: #e0e0e0;
+      --border: #00ff8833;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Roboto', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(10px);
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      color: var(--accent);
+      text-shadow: 0 0 10px var(--accent);
+    }
+    .status {
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    .online { color: var(--accent); }
+
+    /* Main */
+    main {
+      flex: 1;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Video Feed */
+    .feed {
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,255,136,0.1);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .feed video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+    .overlay {
+      position: absolute;
+      top: 16px; left: 16px;
+      background: rgba(0,0,0,0.7);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--card);
+      border-radius: 12px;
+      margin-top: 1rem;
+    }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-start {
+      background: var(--accent);
+      color: #000;
+    }
+    .btn-start:hover { background: #00cc70; transform: translateY(-2px); }
+    .btn-stop {
+      background: #ff3b5c;
+      color: white;
+    }
+    .btn-stop:hover { background: #cc2e4a; }
+
+    /* Stats Panel */
+    .panel {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .panel h3 {
+      font-family: 'Orbitron', sans-serif;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      text-shadow: 0 0 8px var(--accent);
+    }
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.7rem 0;
+      border-bottom: 1px dashed #333;
+      font-size: 0.95rem;
+    }
+    .stat:last-child { border: none; }
+    .value {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* Log */
+    .log {
+      background: #000;
+      border-radius: 10px;
+      padding: 1rem;
+      height: 220px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+      border: 1px solid #333;
+    }
+    .log::-webkit-scrollbar { width: 6px; }
+    .log::-webkit-scrollbar-track { background: #111; }
+    .log::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      main { grid-template-columns: 1fr; }
+      .panel { order: -1; }
+    }
   </style>
 </head>
 <body>
-  <h1>HDMI Screen Stream</h1>
-  <video id="video" autoplay muted playsinline></video>
-  <br>
-  <button id="start">Start HDMI Stream</button>
-  <p id="status">Click to capture HDMI screen</p>
 
-  <!-- SimplePeer for WebRTC -->
-  <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
+  <!-- Header -->
+  <header>
+    <div class="logo">HDMI <span style="color:#fff">Scanner</span></div>
+    <div class="status" id="status">Ready</div>
+  </header>
 
+  <!-- Main Content -->
+  <main>
+    <!-- Video Feed -->
+    <section class="feed">
+      <video id="video" autoplay playsinline></video>
+      <div class="overlay" id="overlay">Select HDMI Source →</div>
+      <canvas id="canvas" style="display:none;"></canvas>
+    </section>
+
+    <!-- Right Panel -->
+    <aside>
+      <!-- Controls -->
+      <div class="controls">
+        <button class="btn btn-start" id="startBtn">
+          <i class="fas fa-play"></i> Start Scan
+        </button>
+        <button class="btn btn-stop" id="stopBtn" disabled>
+          <i class="fas fa-stop"></i> Stop
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="panel">
+        <h3><i class="fas fa-chart-line"></i> Live Stats</h3>
+        <div class="stat">Resolution: <span class="value" id="res">-</span></div>
+        <div class="stat">FPS: <span class="value" id="fps">-</span></div>
+        <div class="stat">Bright Pixels: <span class="value" id="bright">0%</span></div>
+        <div class="stat">Scan Rate: <span class="value" id="rate">0 Hz</span></div>
+      </div>
+
+      <!-- Log -->
+      <div class="panel">
+        <h3><i class="fas fa-terminal"></i> Activity Log</h3>
+        <div class="log" id="log">System initialized.</div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Scripts -->
   <script>
     const video = document.getElementById('video');
-    const startBtn = document.getElementById('start');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const log = document.getElementById('log');
     const status = document.getElementById('status');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
 
-    let peer = null;
+    // Stats
+    const resEl = document.getElementById('res');
+    const fpsEl = document.getElementById('fps');
+    const brightEl = document.getElementById('bright');
+    const rateEl = document.getElementById('rate');
 
+    let stream = null;
+    let scanning = false;
+    let lastTime = 0;
+    let frameCount = 0;
+    let scanStart = 0;
+
+    // Log helper
+    function addLog(msg) {
+      const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+      log.innerHTML += `<div>[${time}] ${msg}</div>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Start HDMI Capture
     startBtn.onclick = async () => {
       try {
-        status.textContent = "Choose your HDMI screen...";
+        overlay.textContent = "Select your HDMI display...";
+        addLog("Requesting screen capture...");
 
-        // THIS IS THE HDMI CAPTURE PART
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            frameRate: 30,
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          },
-          audio: true
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: 60 } },
+          audio: false
         });
 
         video.srcObject = stream;
-        status.textContent = "Streaming HDMI live!";
+        overlay.textContent = "HDMI LIVE";
+        status.textContent = "SCANNING";
+        status.className = "status online";
 
-        // WebRTC: Send stream to anyone (viewer)
-        peer = new SimplePeer({
-          initiator: true,
-          stream: stream,
-          trickle: false
-        });
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
 
-        peer.on('signal', data => {
-          console.log('SIGNAL (copy this to viewer):', JSON.stringify(data));
-          alert('Copy this signal to the viewer:\n' + JSON.stringify(data));
-        });
-
-        // Stop when user closes screen share
-        stream.getVideoTracks()[0].onended = () => {
-          status.textContent = "HDMI stream stopped.";
-          if (peer) peer.destroy();
+        video.onloadedmetadata = () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          resEl.textContent = `${video.videoWidth}×${video.videoHeight}`;
+          addLog(`Resolution locked: ${video.videoWidth}×${video.videoHeight}`);
+          scanning = true;
+          scanStart = performance.now();
+          requestAnimationFrame(scanLoop);
         };
 
       } catch (err) {
-        status.textContent = "Error: " + err.message;
+        addLog(`Error: ${err.message}`);
+        overlay.textContent = "Capture Failed";
       }
     };
 
-    // Optional: Receive signal from viewer (paste here)
-    window.pasteSignal = (signal) => {
-      if (peer && signal) peer.signal(JSON.parse(signal));
+    // Stop
+    stopBtn.onclick = () => {
+      scanning = false;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      video.srcObject = null;
+      overlay.textContent = "Select HDMI Source →";
+      status.textContent = "Ready";
+      status.className = "status";
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      addLog("Scan stopped by user.");
     };
+
+    // Scan Loop
+    function scanLoop(now) {
+      if (!scanning) return;
+
+      const delta = now - lastTime;
+      if (delta > 0) {
+        const fps = (1000 / delta).toFixed(1);
+        fpsEl.textContent = fps;
+        frameCount++;
+      }
+      lastTime = now;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const pixels = imageData.data;
+
+      // Scan: Count bright (white) pixels
+      let brightCount = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i], g = pixels[i+1], b = pixels[i+2];
+        if (r > 220 && g > 220 && b > 220) brightCount++;
+      }
+      const brightPct = (brightCount / (pixels.length / 4) * 100).toFixed(2);
+      brightEl.textContent = brightPct + '%';
+
+      // Scan rate
+      const elapsed = (now - scanStart) / 1000;
+      rateEl.textContent = frameCount > 0 ? (frameCount / elapsed).toFixed(1) + ' Hz' : '0 Hz';
+
+      requestAnimationFrame(scanLoop);
+    }
+
+    // Auto-stop on share end
+    video.addEventListener('ended', () => stopBtn.click());
   </script>
 </body>
 </html>
