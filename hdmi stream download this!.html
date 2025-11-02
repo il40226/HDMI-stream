@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HDMI Stream</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #000; color: #0f0; }
+    video { width: 90%; max-width: 800px; margin: 20px auto; border: 3px solid #0f0; }
+    button { padding: 15px 30px; font-size: 18px; background: #0f0; color: #000; border: none; }
+  </style>
+</head>
+<body>
+  <h1>HDMI Screen Stream</h1>
+  <video id="video" autoplay muted playsinline></video>
+  <br>
+  <button id="start">Start HDMI Stream</button>
+  <p id="status">Click to capture HDMI screen</p>
+
+  <!-- SimplePeer for WebRTC -->
+  <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
+
+  <script>
+    const video = document.getElementById('video');
+    const startBtn = document.getElementById('start');
+    const status = document.getElementById('status');
+
+    let peer = null;
+
+    startBtn.onclick = async () => {
+      try {
+        status.textContent = "Choose your HDMI screen...";
+
+        // THIS IS THE HDMI CAPTURE PART
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            frameRate: 30,
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: true
+        });
+
+        video.srcObject = stream;
+        status.textContent = "Streaming HDMI live!";
+
+        // WebRTC: Send stream to anyone (viewer)
+        peer = new SimplePeer({
+          initiator: true,
+          stream: stream,
+          trickle: false
+        });
+
+        peer.on('signal', data => {
+          console.log('SIGNAL (copy this to viewer):', JSON.stringify(data));
+          alert('Copy this signal to the viewer:\n' + JSON.stringify(data));
+        });
+
+        // Stop when user closes screen share
+        stream.getVideoTracks()[0].onended = () => {
+          status.textContent = "HDMI stream stopped.";
+          if (peer) peer.destroy();
+        };
+
+      } catch (err) {
+        status.textContent = "Error: " + err.message;
+      }
+    };
+
+    // Optional: Receive signal from viewer (paste here)
+    window.pasteSignal = (signal) => {
+      if (peer && signal) peer.signal(JSON.parse(signal));
+    };
+  </script>
+</body>
+</html>
